@@ -416,17 +416,15 @@ export default {
         }
       }
     },
-    etb() {
-      console.log(this.form.etb);
+    etb(newValue) {
       const totalHours = parseFloat(this.totalNormTime);
       if (isNaN(totalHours)) return;
-
-      const etbDate = new Date(this.etb);
+      const etbDate = new Date(newValue);
       const etdDate = new Date(etbDate.getTime() + totalHours * 3600 * 1000);
-
       console.log(etdDate);
       this.etd = etdDate.toISOString().substring(0, 16);
       this.form.etd = this.etd;
+      this.updateETD(newValue); // Gọi phương thức updateETD trực tiếp
     },
   },
   computed: {
@@ -438,24 +436,14 @@ export default {
     closeForm() {
       this.$emit("close-form");
     },
-    // generateEtd(etb) {
-    //   if (etb) {
-    //     const etbDate = new Date(this.etb.replace(' ', 'T'));
-
-    //     // Tính toán số giờ tương ứng với totalNormTime
-    //     const totalHours = this.totalNormTime;
-
-    //     // Thêm số giờ vào ngày ETA
-    //     etbDate.setHours(etbDate.getHours() + totalHours);
-
-    //     // Chuyển đổi ngày ETD thành chuỗi định dạng dd/mm/yyyy
-    //     const etdDate = etbDate.toISOString().slice(0, 16).replace('T', ' ');
-    //     console.log(etdDate);
-    //     this.etd = etdDate;
-    //   } else {
-    //     this.etd = null;
-    //   }
-    // },
+    updateETD(etb) {
+      const totalHours = parseFloat(this.totalNormTime);
+      if (isNaN(totalHours)) return;
+      const etbDate = new Date(etb);
+      const etdDate = new Date(etbDate.getTime() + totalHours * 3600 * 1000);
+      this.etd = etdDate.toISOString().substring(0, 16);
+      this.form.etd = this.etd;
+    },
     getTotalNormTime(berthPlanId) {
       getInfoByBerthPlanId(berthPlanId).then((response) => {
         if (response.data) {
