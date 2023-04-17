@@ -49,7 +49,7 @@
                     format="dd/MM/yyyy HH:mm"
                     value-format="yyyy-MM-dd HH:mm"
                     v-model="form.etb"
-                    @change="etb"
+                    @change="updateETD"
                   >
                   </el-date-picker>
                 </el-form-item>
@@ -337,7 +337,6 @@ export default {
       etw: null,
       etc: null,
       etd: null,
-      totalNormTime: 0,
       isShow: true,
       berthList: [],
       form: {},
@@ -403,28 +402,22 @@ export default {
     };
   },
   watch: {
-    async updateTimeForm(newValue) {
-      if (newValue.open) {
-        if (newValue.vessel) {
-          this.totalNormTime = 0;
-          this.getTotalNormTime(newValue.vessel.id);
-          this.form = newValue.vessel;
-          this.etb = newValue.vessel.etb;
-          this.etw = newValue.vessel.etw;
-          this.etc = newValue.vessel.etc;
-          this.etd = newValue.vessel.etd;
+    updateTimeForm: {
+      handler: function (newValue) {
+        if (newValue.open) {
+          if (newValue.vessel) {
+            this.form = newValue.vessel;
+            this.etb = newValue.vessel.etb;
+            this.etw = newValue.vessel.etw;
+            this.etc = newValue.vessel.etc;
+            this.etd = newValue.vessel.etd;
+          }
         }
-      }
+      },
+      deep: true,
     },
     etb(newValue) {
-      const totalHours = parseFloat(this.totalNormTime);
-      if (isNaN(totalHours)) return;
-      const etbDate = new Date(newValue);
-      const etdDate = new Date(etbDate.getTime() + totalHours * 3600 * 1000);
-      console.log(etdDate);
-      this.etd = etdDate.toISOString().substring(0, 16);
-      this.form.etd = this.etd;
-      this.updateETD(newValue); // Gọi phương thức updateETD trực tiếp
+      this.updateETD(newValue);
     },
   },
   computed: {
@@ -436,22 +429,25 @@ export default {
     closeForm() {
       this.$emit("close-form");
     },
-    updateETD(etb) {
-      const totalHours = parseFloat(this.totalNormTime);
-      if (isNaN(totalHours)) return;
-      const etbDate = new Date(etb);
-      const etdDate = new Date(etbDate.getTime() + totalHours * 3600 * 1000);
-      this.etd = etdDate.toISOString().substring(0, 16);
-      this.form.etd = this.etd;
-    },
-    getTotalNormTime(berthPlanId) {
-      getInfoByBerthPlanId(berthPlanId).then((response) => {
-        if (response.data) {
-          response.data.forEach((obj) => {
-            this.totalNormTime += obj.normTime;
-          });
+    async updateETD(newValue) {
+      let totalNormTime = 0;
+      await getInfoByBerthPlanId(this.updateTimeForm.vessel.id).then(
+        (response) => {
+          if (response.data) {
+            response.data.forEach((obj) => {
+              totalNormTime += obj.normTime;
+            });
+          }
         }
-      });
+      );
+      const totalHours = parseFloat(totalNormTime);
+      if (isNaN(totalHours)) return;
+      console.log(totalHours);
+      const etbDate = new Date(newValue);
+
+      const etdDate = moment(etbDate).add(totalHours, "hours");
+      this.etd = etdDate.format("YYYY-MM-DD HH:mm");
+      this.form.etd = this.etd;
     },
     getBerths() {
       listBerthNotPage().then((res) => {
